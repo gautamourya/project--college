@@ -21,26 +21,41 @@ const upload = multer({
 });
 
 // ImageKit configuration
-const imagekit = new ImageKit({
-  publicKey: process.env.IMAGEKIT_PUBLIC_KEY || '',
-  privateKey: process.env.IMAGEKIT_PRIVATE_KEY || '',
-  urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT || ''
-});
+let imagekit = null;
+try {
+  if (process.env.IMAGEKIT_PUBLIC_KEY && process.env.IMAGEKIT_PRIVATE_KEY && process.env.IMAGEKIT_URL_ENDPOINT) {
+    imagekit = new ImageKit({
+      publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+      privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+      urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
+    });
+  } else {
+    console.warn('ImageKit configuration missing. Image uploads will be skipped.');
+  }
+} catch (error) {
+  console.error('ImageKit initialization failed:', error.message);
+}
 
 async function uploadAvatarToImageKit(file) {
   if (!file) return null;
-  if (!imagekit.options || !imagekit.options.privateKey) {
+  if (!imagekit) {
     // ImageKit not configured; skip upload
+    console.warn('ImageKit not configured, skipping image upload');
     return null;
   }
-  const fileName = `${Date.now()}_${file.originalname.replace(/[^a-zA-Z0-9.\-_/]/g, '_')}`;
-  const result = await imagekit.upload({
-    file: file.buffer,
-    fileName,
-    folder: process.env.IMAGEKIT_AVATAR_FOLDER || '/nari/avatars',
-    useUniqueFileName: true
-  });
-  return result && result.url ? result.url : null;
+  try {
+    const fileName = `${Date.now()}_${file.originalname.replace(/[^a-zA-Z0-9.\-_/]/g, '_')}`;
+    const result = await imagekit.upload({
+      file: file.buffer,
+      fileName,
+      folder: process.env.IMAGEKIT_AVATAR_FOLDER || '/nari/avatars',
+      useUniqueFileName: true
+    });
+    return result && result.url ? result.url : null;
+  } catch (error) {
+    console.error('ImageKit upload error:', error.message);
+    return null;
+  }
 }
 
 // Validation rules
