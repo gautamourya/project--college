@@ -80,7 +80,7 @@ const corsOptions = {
     // Allow production domains
     const allowedOrigins = [
       
-      'https://project-college-eight.vercel.app/'
+      'https://project-college-eight.vercel.app'
       // 'http://localhost:3000/',
     ];
     
